@@ -1,0 +1,89 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+export default function TaxCalculator() {
+  const [grossIncome, setGrossIncome] = useState("");
+  const [netIncome, setNetIncome] = useState(null);
+  const [inpsAmount, setInpsAmount] = useState(null);
+  const [taxAmount, setTaxAmount] = useState(null);
+  const [savingsAmount, setSavingsAmount] = useState(null);
+  const [savingsInpsAmount, setSavingsInpsAmount] = useState(null);
+  const [taxableRate, setTaxableRate] = useState("0.4"); // Default: 40% imponibile con figli
+
+  const TAX_RATE = 0.24; // 24% tasse
+  const INPS_RATE = 0.26; // 26% contributi
+  const DEDUCTIONS = 1000; // Costi detraibili fissi (esempio)
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const calculateNetIncome = () => {
+    const gross = parseFloat(grossIncome) || 0;
+    const taxableIncome = (gross - DEDUCTIONS) * parseFloat(taxableRate); // Imponibile variabile
+    const inps = taxableIncome * INPS_RATE;
+    const taxes = taxableIncome * TAX_RATE;
+    const net = gross - inps - taxes;
+    const savings = taxes / 18; // Amount to save monthly for future tax payment
+    const savingsInps = inps / 18; // Amount to save monthly for future INPS payment
+
+    setInpsAmount(formatCurrency(inps));
+    setTaxAmount(formatCurrency(taxes));
+    setNetIncome(formatCurrency(net));
+    setSavingsAmount(formatCurrency(savings));
+    setSavingsInpsAmount(formatCurrency(savingsInps));
+  };
+
+  return (
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+      <Card className="p-4 w-full max-w-md bg-white shadow-lg rounded-lg">
+        <CardContent>
+          <h2 className="text-xl font-bold mb-4 text-center">Calcolatore Tasse Italia</h2>
+          <Input
+            type="number"
+            placeholder="Inserisci il reddito lordo (€)"
+            value={grossIncome}
+            onChange={(e) => setGrossIncome(e.target.value)}
+            className="mb-4 border rounded p-2 w-full"
+          />
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">Seleziona l'imponibile:</p>
+            <RadioGroup 
+              onValueChange={setTaxableRate} 
+              value={taxableRate} 
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <RadioGroupItem value="0.4" id="option-40" />
+                <Label htmlFor="option-40">40% imponibile (con figli)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="0.5" id="option-50" />
+                <Label htmlFor="option-50">50% imponibile (senza figli)</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <div className="flex justify-center">
+            <Button onClick={calculateNetIncome} className="bg-blue-500 text-white px-4 py-2 rounded">Calcola Netto</Button>
+          </div>
+          {netIncome !== null && (
+            <div className="mt-4 text-lg font-semibold text-center">
+              <p>Contributi INPS: {inpsAmount}</p>
+              <p>IRPEF: {taxAmount}</p>
+              <p>Reddito netto: {netIncome}</p>
+              <p className="text-sm text-gray-600">Dovresti risparmiare {savingsAmount} al mese per coprire le tasse tra 18 mesi.</p>
+              <p className="text-sm text-gray-600">Dovresti risparmiare {savingsInpsAmount} al mese per coprire i contributi INPS tra 18 mesi.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
